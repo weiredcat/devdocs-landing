@@ -1,0 +1,2173 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DevDocs — Open-Source Collaborative Docs for Technical Teams</title>
+  <meta name="description" content="DevDocs is an open-source, self-hostable, real-time collaborative document workspace for technical teams. Built on Yjs CRDT, Tiptap, Supabase Postgres RLS, and native Model Context Protocol (MCP) AI agents. A modern, sovereign replacement for Quip." />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232563eb'/><text x='16' y='21' font-family='system-ui,sans-serif' font-size='14' font-weight='800' fill='white' text-anchor='middle'>DD</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --font-sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      /* Dark Theme (Default) */
+      --bg: #090d16;
+      --bg-subtle: #0f172a;
+      --bg-card: rgba(18, 26, 44, 0.7);
+      --bg-card-hover: rgba(28, 38, 62, 0.85);
+      --bg-elevated: #1e293b;
+      --bg-input: #111827;
+      
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.16);
+      --border-accent: rgba(59, 130, 246, 0.4);
+      
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --primary-light: rgba(59, 130, 246, 0.15);
+      
+      --accent-violet: #8b5cf6;
+      --accent-violet-light: rgba(139, 92, 246, 0.15);
+      --accent-emerald: #10b981;
+      --accent-emerald-light: rgba(16, 185, 129, 0.15);
+      --accent-amber: #f59e0b;
+      --accent-amber-light: rgba(245, 158, 11, 0.15);
+      --accent-cyan: #06b6d4;
+      --accent-cyan-light: rgba(6, 182, 212, 0.15);
+      
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+      --shadow-lg: 0 20px 48px -12px rgba(0, 0, 0, 0.5);
+      --glow-blue: 0 0 40px -10px rgba(59, 130, 246, 0.25);
+      --glow-violet: 0 0 40px -10px rgba(139, 92, 246, 0.25);
+      
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-full: 9999px;
+    }
+
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --bg-subtle: #f1f5f9;
+      --bg-card: rgba(255, 255, 255, 0.85);
+      --bg-card-hover: rgba(255, 255, 255, 0.98);
+      --bg-elevated: #ffffff;
+      --bg-input: #ffffff;
+      
+      --border: rgba(15, 23, 42, 0.08);
+      --border-strong: rgba(15, 23, 42, 0.16);
+      --border-accent: rgba(37, 99, 235, 0.35);
+      
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #64748b;
+      
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      
+      --accent-violet: #7c3aed;
+      --accent-violet-light: #f5f3ff;
+      --accent-emerald: #059669;
+      --accent-emerald-light: #ecfdf5;
+      --accent-amber: #d97706;
+      --accent-amber-light: #fffbeb;
+      --accent-cyan: #0891b2;
+      --accent-cyan-light: #ecfeff;
+      
+      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 20px 48px -12px rgba(15, 23, 42, 0.12);
+      --glow-blue: 0 0 35px -8px rgba(37, 99, 235, 0.15);
+      --glow-violet: 0 0 35px -8px rgba(124, 58, 237, 0.15);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246, 0.12) 0%, transparent 60%),
+        radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 40%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+      background-attachment: fixed;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+
+    a { color: inherit; text-decoration: none; cursor: pointer; }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* 1. Header & Navigation */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(9, 13, 22, 0.8);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      transition: background-color 0.25s ease, border-color 0.25s ease;
+    }
+    [data-theme="light"] header {
+      background: rgba(248, 250, 252, 0.85);
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      height: 68px;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      font-size: 19px;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-left: 16px;
+    }
+
+    .nav-link {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: color 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-link:hover {
+      color: var(--text);
+    }
+
+    .nav-spacer { flex: 1; }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .theme-toggle {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      display: grid;
+      place-items: center;
+      transition: all 0.2s;
+    }
+    .theme-toggle:hover {
+      color: var(--text);
+      border-color: var(--border-strong);
+      background: var(--bg-card-hover);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: var(--radius-md);
+      padding: 9px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-ghost {
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+    }
+    .btn-ghost:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 13px;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-lg {
+      padding: 13px 26px;
+      font-size: 16px;
+      border-radius: var(--radius-md);
+    }
+
+    /* 2. Hero Section */
+    .hero {
+      padding: 80px 0 60px;
+      text-align: center;
+      position: relative;
+    }
+
+    .pill-announcement {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: var(--radius-full);
+      background: var(--primary-light);
+      border: 1px solid var(--border-accent);
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .pill-announcement:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    }
+
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent-emerald);
+      box-shadow: 0 0 8px var(--accent-emerald);
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+
+    .hero h1 {
+      font-size: 56px;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 20px;
+      font-weight: 800;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, var(--text) 30%, var(--primary) 90%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 19px;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 36px;
+      line-height: 1.55;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .quick-clone-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px 14px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+      backdrop-filter: blur(8px);
+      transition: border-color 0.15s;
+    }
+    .quick-clone-box:hover {
+      border-color: var(--border-strong);
+    }
+    .quick-clone-cmd {
+      color: var(--text);
+    }
+    .copy-btn {
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      padding: 4px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover {
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    /* Key Metrics Badge Bar */
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 36px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      padding-top: 24px;
+      border-top: 1px dashed var(--border);
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .stat-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+    .stat-strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* 3. Hero Mockup / Live Canvas Simulation */
+    .hero-canvas-wrap {
+      margin-top: 48px;
+      position: relative;
+    }
+
+    .hero-canvas-glow {
+      position: absolute;
+      top: -20px;
+      left: 10%;
+      right: 10%;
+      height: 250px;
+      background: radial-gradient(ellipse at center, rgba(37, 99, 235, 0.22) 0%, rgba(139, 92, 246, 0.12) 40%, transparent 70%);
+      filter: blur(40px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .mockup-window {
+      position: relative;
+      z-index: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg), var(--glow-blue);
+      overflow: hidden;
+      text-align: left;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+
+    .mockup-header {
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 7px;
+    }
+    .window-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+    }
+    .window-dot.red { background: #ef4444; }
+    .window-dot.yellow { background: #f59e0b; }
+    .window-dot.green { background: #10b981; }
+
+    .window-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .status-badge.in-review {
+      background: var(--accent-amber-light);
+      color: var(--accent-amber);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .status-badge.yjs-live {
+      background: var(--accent-emerald-light);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .mockup-body {
+      padding: 28px 36px;
+    }
+
+    /* Live Collab Simulated Presence */
+    .collab-presence-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .presence-avatars {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .p-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      border: 2px solid var(--bg-card);
+    }
+    .p-avatar.blue { background: #3b82f6; }
+    .p-avatar.emerald { background: #10b981; }
+    .p-avatar.violet { background: #8b5cf6; }
+    .p-avatar.amber { background: #f59e0b; }
+
+    .rfc-reviewers-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .rfc-check {
+      color: var(--accent-emerald);
+      font-weight: 700;
+    }
+
+    .mockup-doc-title {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mockup-doc-meta {
+      font-size: 14px;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+    }
+
+    /* Editor Prose & Floating Caret simulation */
+    .editor-line-box {
+      position: relative;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 18px;
+    }
+
+    .caret-tag {
+      position: absolute;
+      top: -12px;
+      right: 20px;
+      background: #3b82f6;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .caret-tag::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      right: 12px;
+      border-width: 4px 4px 0 4px;
+      border-style: solid;
+      border-color: #3b82f6 transparent transparent transparent;
+    }
+
+    .ai-bubble-toolbar {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      padding: 4px 8px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      margin-bottom: 12px;
+    }
+    .ai-btn-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .ai-btn-chip:hover {
+      background: var(--primary-light);
+      border-color: var(--border-accent);
+      color: var(--primary);
+    }
+    .ai-btn-chip.active {
+      background: var(--accent-violet-light);
+      border-color: rgba(139, 92, 246, 0.4);
+      color: var(--accent-violet);
+    }
+
+    /* Section Styling */
+    .section {
+      padding: 80px 0;
+      position: relative;
+    }
+
+    .section-head {
+      text-align: center;
+      max-width: 720px;
+      margin: 0 auto 52px;
+    }
+    .section-tag {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--primary);
+      margin-bottom: 10px;
+    }
+    .section-title {
+      font-size: 36px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+      font-weight: 800;
+    }
+    .section-desc {
+      font-size: 17px;
+      color: var(--text-muted);
+    }
+
+    /* 4. Interactive Feature Playground Tabs */
+    .playground-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+      backdrop-filter: blur(16px);
+      overflow: hidden;
+    }
+
+    .playground-tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-subtle);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .playground-tabs-nav::-webkit-scrollbar { display: none; }
+
+    .p-tab-btn {
+      padding: 16px 22px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .p-tab-btn:hover {
+      color: var(--text);
+      background: var(--bg-card-hover);
+    }
+    .p-tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: var(--bg-card);
+    }
+
+    .playground-panel {
+      display: none;
+      padding: 32px;
+    }
+    .playground-panel.active {
+      display: block;
+      animation: fadeIn 0.3s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Interactive AI Tab Styles */
+    .ai-playground-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 860px) {
+      .ai-playground-layout { grid-template-columns: 1fr; }
+    }
+
+    .ai-actions-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .ai-trigger-btn {
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-subtle);
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .ai-trigger-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-light);
+    }
+    .ai-trigger-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+    }
+
+    .code-diff-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+    }
+    .card-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-sans);
+    }
+    .card-label-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+    }
+    .metric-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+    }
+
+    /* Diagram Tab */
+    .diagram-sandbox {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      text-align: center;
+    }
+    .diagram-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .diagram-svg-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 30px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 280px;
+    }
+
+    /* Interactive HTML Embed Tab */
+    .html-embed-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .embed-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+    }
+    .device-viewport-toggles {
+      display: flex;
+      gap: 6px;
+    }
+    .device-btn {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .device-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .interactive-calc-box {
+      max-width: 480px;
+      margin: 24px auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      text-align: left;
+    }
+    .calc-input-group {
+      margin-bottom: 16px;
+    }
+    .calc-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .calc-input {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-strong);
+      background: var(--bg-input);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      outline: none;
+    }
+    .calc-input:focus {
+      border-color: var(--primary);
+    }
+    .calc-result-box {
+      background: var(--accent-emerald-light);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--accent-emerald);
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* MCP Tab */
+    .mcp-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 860px) {
+      .mcp-grid { grid-template-columns: 1fr; }
+    }
+
+    .mcp-flow-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+    }
+
+    /* 5. Feature Breakdown Grid (6 Pillars) */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 24px;
+    }
+
+    .feature-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 30px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(10px);
+    }
+    .feature-box:hover {
+      border-color: var(--border-accent);
+      background: var(--bg-card-hover);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .feat-icon-badge {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: grid;
+      place-items: center;
+      margin-bottom: 20px;
+    }
+    .feat-icon-badge.blue { background: var(--primary-light); color: var(--primary); }
+    .feat-icon-badge.violet { background: var(--accent-violet-light); color: var(--accent-violet); }
+    .feat-icon-badge.emerald { background: var(--accent-emerald-light); color: var(--accent-emerald); }
+    .feat-icon-badge.amber { background: var(--accent-amber-light); color: var(--accent-amber); }
+    .feat-icon-badge.cyan { background: var(--accent-cyan-light); color: var(--accent-cyan); }
+    .feat-icon-badge.slate { background: rgba(148, 163, 184, 0.15); color: #94a3b8; }
+
+    .feature-box h3 {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 10px;
+    }
+
+    .feature-box p {
+      font-size: 15px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .feature-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .feat-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+    }
+
+    /* 6. Comparison Table: Quip vs DevDocs */
+    .compare-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-xl);
+      overflow-x: auto;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+    .compare-table th, .compare-table td {
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border);
+    }
+    .compare-table th {
+      background: var(--bg-subtle);
+      font-weight: 700;
+      color: var(--text);
+      font-size: 14px;
+    }
+    .compare-table tr:last-child td {
+      border-bottom: none;
+    }
+    .compare-table td.brand-col {
+      background: rgba(37, 99, 235, 0.04);
+      font-weight: 600;
+      color: var(--primary);
+    }
+    .check-yes {
+      color: var(--accent-emerald);
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .check-no {
+      color: #ef4444;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 7. Self-Host Tabbed Instructions */
+    .deploy-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+
+    .deploy-nav {
+      display: flex;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border);
+    }
+    .deploy-tab {
+      padding: 14px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .deploy-tab:hover {
+      color: var(--text);
+    }
+    .deploy-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: var(--bg-card);
+    }
+
+    .deploy-body {
+      padding: 28px;
+    }
+    .terminal-box {
+      background: #070a11;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: #f1f5f9;
+      position: relative;
+      overflow-x: auto;
+      line-height: 1.7;
+    }
+    .terminal-copy-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s;
+    }
+    .terminal-copy-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    /* 8. Call To Action Banner */
+    .cta-banner {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.18), rgba(139, 92, 246, 0.18));
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-xl);
+      padding: 64px 36px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+    .cta-banner h2 {
+      font-size: 40px;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      font-weight: 800;
+    }
+    .cta-banner p {
+      font-size: 18px;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 32px;
+    }
+
+    /* 9. Modern Technical Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 60px 0 40px;
+      margin-top: 80px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .footer-top {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 48px;
+    }
+    @media (max-width: 768px) {
+      .footer-top { grid-template-columns: 1fr; }
+    }
+    .footer-col h4 {
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .footer-col ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .footer-col a:hover {
+      color: var(--primary);
+    }
+    .footer-bottom {
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 13px;
+    }
+
+    /* SVG Icon Helpers */
+    .icon {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+    .icon-sm { width: 14px; height: 14px; }
+    .icon-lg { width: 24px; height: 24px; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .hero h1 { font-size: 40px; }
+      .hero p { font-size: 17px; }
+      .nav-links { display: none; }
+      .features-grid { grid-template-columns: 1fr; }
+      .mockup-body { padding: 20px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <header>
+    <div class="wrap nav">
+      <a class="brand" href="/">
+        <span class="brand-mark">DD</span>
+        <span>DevDocs</span>
+      </a>
+
+      <nav class="nav-links">
+        <a class="nav-link" href="#playground">Interactive Demo</a>
+        <a class="nav-link" href="#features">Features</a>
+        <a class="nav-link" href="#mcp">AI &amp; MCP</a>
+        <a class="nav-link" href="#compare">Quip vs DevDocs</a>
+        <a class="nav-link" href="#self-host">Self-Host</a>
+      </nav>
+
+      <span class="nav-spacer"></span>
+
+      <div class="nav-actions">
+        <!-- Theme Toggle -->
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark/light theme" title="Toggle theme">
+          <svg class="icon icon-sm" id="sunIcon" style="display:none;" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="icon icon-sm" id="moonIcon" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+
+        <!-- GitHub Repo -->
+        <a class="btn btn-ghost btn-sm" href="https://github.com/KiroAINativeCoder/DXEditor" target="_blank" rel="noopener">
+          <svg class="icon icon-sm" viewBox="0 0 24 24">
+            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+          </svg>
+          <span>GitHub</span>
+        </a>
+
+        <!-- Launch App -->
+        <a class="btn btn-primary btn-sm" href="//app.devdocs.trailmark.online/">
+          <span>Open App</span>
+          <svg class="icon icon-sm" viewBox="0 0 24 24">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main>
+    <section class="hero wrap">
+      <!-- Announcement Pill -->
+      <a class="pill-announcement" href="#compare">
+        <span class="pulse-dot"></span>
+        <span>Quip is retiring. Own your documentation &amp; CRDT sync engine</span>
+        <svg class="icon icon-sm" viewBox="0 0 24 24">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </a>
+
+      <!-- Headline -->
+      <h1>
+        Collaborative docs built for <br/>
+        <span class="hero-gradient">engineering teams &amp; AI agents</span>
+      </h1>
+
+      <p>
+        DevDocs is an open-source, self-hosted markdown workspace. Real-time multiplayer CRDT sync, in-editor AI superpowers, interactive HTML embeds, Mermaid diagram studio, and remote Model Context Protocol (MCP) access.
+      </p>
+
+      <!-- CTAs -->
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="//app.devdocs.trailmark.online/">
+          <svg class="icon" viewBox="0 0 24 24">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span>Launch DevDocs Free</span>
+        </a>
+
+        <div class="quick-clone-box">
+          <span style="color: var(--primary);">$</span>
+          <span class="quick-clone-cmd" id="quickCmdText">npm run dev</span>
+          <button class="copy-btn" id="copyCmdBtn" title="Copy start command">
+            <svg class="icon icon-sm" viewBox="0 0 24 24">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Live metrics row -->
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-dot" style="background:#10b981;"></span>
+          <span>Latency: <span class="stat-strong">&lt; 15ms</span> (Yjs CRDT)</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-dot" style="background:#3b82f6;"></span>
+          <span>Security: <span class="stat-strong">Postgres RLS</span></span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-dot" style="background:#8b5cf6;"></span>
+          <span>AI Integration: <span class="stat-strong">MCP + BYO Keys</span></span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-dot" style="background:#f59e0b;"></span>
+          <span>License: <span class="stat-strong">100% Open Source</span></span>
+        </div>
+      </div>
+
+      <!-- Hero Interactive Mockup -->
+      <div class="hero-canvas-wrap">
+        <div class="hero-canvas-glow"></div>
+        <div class="mockup-window">
+          <!-- Window Header -->
+          <div class="mockup-header">
+            <div class="window-controls">
+              <div class="window-dot red"></div>
+              <div class="window-dot yellow"></div>
+              <div class="window-dot green"></div>
+            </div>
+            <div class="window-title">
+              <svg class="icon icon-sm" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+              </svg>
+              <span>RFC-104-distributed-crdt-sync.md</span>
+              <span class="status-badge in-review">RFC · IN_REVIEW</span>
+            </div>
+            <span class="status-badge yjs-live">
+              <span class="pulse-dot"></span> 3 Peers Connected
+            </span>
+          </div>
+
+          <!-- Document Canvas -->
+          <div class="mockup-body">
+            <div class="collab-presence-bar">
+              <div class="presence-avatars">
+                <div class="p-avatar blue" title="Sarah Chen (Staff Engineer)">SC</div>
+                <div class="p-avatar emerald" title="Mark Ruiz (Backend Lead)">MR</div>
+                <div class="p-avatar violet" title="Alice Kim (Security Architect)">AK</div>
+                <span style="font-size: 13px; color: var(--text-muted); margin-left: 6px;">Live typing: Sarah Chen is editing Section 3.2</span>
+              </div>
+              <div class="rfc-reviewers-strip">
+                <span class="rfc-check">✓</span> 2/3 Mandatory Approvals (Alice Kim pending)
+              </div>
+            </div>
+
+            <h2 class="mockup-doc-title">
+              Architecture Spec: High-Throughput CRDT WebSocket Relay
+            </h2>
+            <div class="mockup-doc-meta">
+              Authored by Sarah Chen · Last synced 4s ago via LevelDB delta snapshots
+            </div>
+
+            <!-- In-Editor AI bubble simulation -->
+            <div class="ai-bubble-toolbar">
+              <span style="font-size: 11px; font-weight: 700; color: var(--accent-violet); display: flex; align-items: center; gap: 4px; padding: 0 4px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                DevDocs AI:
+              </span>
+              <button class="ai-btn-chip active">✨ Bulletise Criteria</button>
+              <button class="ai-btn-chip">✨ Crispise (-48%)</button>
+              <button class="ai-btn-chip">✨ Tabularize</button>
+              <button class="ai-btn-chip">✨ Text-to-Mermaid</button>
+            </div>
+
+            <!-- Prose line with live presence caret -->
+            <div class="editor-line-box">
+              <div class="caret-tag">
+                <span>Sarah Chen</span>
+              </div>
+              <p style="font-size: 14px; color: var(--text); font-family: var(--font-mono); margin-bottom: 8px;">
+                <span style="color: #10b981; font-weight: 700;">✓</span> <strong>Requirement 1 (Latency SLA):</strong> 99th percentile sync round-trip &lt; 20ms across 1,000 active concurrent rooms.
+              </p>
+              <p style="font-size: 14px; color: var(--text); font-family: var(--font-mono);">
+                <span style="color: #10b981; font-weight: 700;">✓</span> <strong>Requirement 2 (Zero Data Loss):</strong> State vectors persisted to transactional SQLite/Postgres with delta keyframe replay.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: INTERACTIVE PLAYGROUND (TRY THE SUPERPOWERS) -->
+    <section class="section wrap" id="playground">
+      <div class="section-head">
+        <span class="section-tag">Interactive Studio</span>
+        <h2 class="section-title">Experience DevDocs superpowers live</h2>
+        <p class="section-desc">Test real features right here on this page: AI text refactoring, Mermaid diagramming, live sandboxed HTML embeds, and remote MCP agent interactions.</p>
+      </div>
+
+      <div class="playground-container">
+        <!-- Tab Navigation -->
+        <div class="playground-tabs-nav" id="playgroundTabs">
+          <button class="p-tab-btn active" data-tab="tab-ai">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <span>1. AI Document Refactor</span>
+          </button>
+          <button class="p-tab-btn" data-tab="tab-diagram">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+            <span>2. Diagramify &amp; Mermaid Studio</span>
+          </button>
+          <button class="p-tab-btn" data-tab="tab-mcp">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="14" x2="23" y2="14"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="14" x2="4" y2="14"></line></svg>
+            <span>3. Connect AI via MCP</span>
+          </button>
+          <button class="p-tab-btn" data-tab="tab-html">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            <span>4. Live Interactive HTML Embed</span>
+          </button>
+          <button class="p-tab-btn" data-tab="tab-coderef">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+            <span>5. Pinned GitHub Code Refs</span>
+          </button>
+        </div>
+
+        <!-- Panel 1: AI Superpowers -->
+        <div class="playground-panel active" id="tab-ai">
+          <div class="ai-actions-toolbar">
+            <span style="font-size: 13px; font-weight: 600; color: var(--text-muted); align-self: center; margin-right: 8px;">Select transformation:</span>
+            <button class="ai-trigger-btn active" onclick="applyAiDemo('bulletise')">
+              <span>✨ Bulletise Vague</span>
+            </button>
+            <button class="ai-trigger-btn" onclick="applyAiDemo('crispise')">
+              <span>⚡ Crispise (-54%)</span>
+            </button>
+            <button class="ai-trigger-btn" onclick="applyAiDemo('tabularize')">
+              <span>📊 Tabularize Data</span>
+            </button>
+            <button class="ai-trigger-btn" onclick="applyAiDemo('mermaid')">
+              <span>📐 Text-to-Mermaid</span>
+            </button>
+          </div>
+
+          <div class="ai-playground-layout">
+            <!-- Left: Original text -->
+            <div class="code-diff-card">
+              <div class="card-label-row">
+                <span class="card-label-title">Original Draft Text</span>
+                <span class="metric-badge" style="background: rgba(148, 163, 184, 0.15); color: #94a3b8;">Unstructured Input</span>
+              </div>
+              <div id="aiOriginalContent" style="color: var(--text-muted); flex: 1;">
+                "The authentication system should probably be pretty fast so people don't wait around. Also it needs to handle lots of concurrent user logins when our Europe traffic peaks without running out of database connections or memory."
+              </div>
+            </div>
+
+            <!-- Right: AI Result -->
+            <div class="code-diff-card" style="border-color: var(--border-accent); background: rgba(59, 130, 246, 0.03);">
+              <div class="card-label-row">
+                <span class="card-label-title" style="color: var(--primary);">Transformed Output</span>
+                <span class="metric-badge" id="aiMetricBadge" style="background: var(--accent-emerald-light); color: var(--accent-emerald);">+98% Technical Clarity</span>
+              </div>
+              <div id="aiTransformedContent" style="color: var(--text); flex: 1;">
+                <div style="color: #10b981; font-weight: 600; margin-bottom: 6px;">✓ SLA 1: Auth latency p99 &lt; 45ms under 15,000 req/sec</div>
+                <div style="color: #10b981; font-weight: 600; margin-bottom: 6px;">✓ SLA 2: PgBouncer pool ceiling fixed at 120 client connections</div>
+                <div style="color: #10b981; font-weight: 600;">✓ SLA 3: Memory footprint capped at 256MB with leak circuit-breaker</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 2: Diagramify Studio -->
+        <div class="playground-panel" id="tab-diagram">
+          <div class="diagram-sandbox">
+            <div class="diagram-toolbar">
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-ghost btn-sm" onclick="setDiagramType('arch')">Architecture Flow</button>
+                <button class="btn btn-ghost btn-sm" onclick="setDiagramType('sequence')">Auth Sequence</button>
+                <button class="btn btn-ghost btn-sm" onclick="setDiagramType('crdt')">CRDT Convergence</button>
+              </div>
+              <div style="font-size: 13px; color: var(--text-muted); font-family: var(--font-mono);">
+                Diagramify Studio · Native SVG vector output
+              </div>
+            </div>
+
+            <div class="diagram-svg-container" id="diagramDisplay">
+              <!-- Inline SVG Flowchart -->
+              <svg width="680" height="180" viewBox="0 0 680 180" style="max-width: 100%; height: auto;">
+                <defs>
+                  <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#2563eb" />
+                    <stop offset="100%" stop-color="#1d4ed8" />
+                  </linearGradient>
+                  <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#8b5cf6" />
+                    <stop offset="100%" stop-color="#6d28d9" />
+                  </linearGradient>
+                </defs>
+                <!-- Client Box -->
+                <rect x="20" y="55" width="130" height="70" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="2"/>
+                <text x="85" y="90" fill="#f8fafc" font-family="system-ui" font-size="13" font-weight="600" text-anchor="middle">Browser (Tiptap)</text>
+                <text x="85" y="108" fill="#94a3b8" font-family="monospace" font-size="11" text-anchor="middle">Y.Doc Replica</text>
+
+                <!-- Arrow 1 -->
+                <path d="M 150 90 L 230 90" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow)" />
+                <text x="190" y="80" fill="#3b82f6" font-family="monospace" font-size="10" text-anchor="middle">WebSocket</text>
+
+                <!-- Collab Relay -->
+                <rect x="230" y="45" width="160" height="90" rx="10" fill="url(#blueGrad)" stroke="#60a5fa" stroke-width="2"/>
+                <text x="310" y="85" fill="#ffffff" font-family="system-ui" font-size="14" font-weight="700" text-anchor="middle">Collab Relay (:4001)</text>
+                <text x="310" y="105" fill="#e0e7ff" font-family="monospace" font-size="11" text-anchor="middle">Yjs Sync Protocol</text>
+
+                <!-- Arrow 2 -->
+                <path d="M 390 90 L 470 90" stroke="#8b5cf6" stroke-width="2" />
+                <text x="430" y="80" fill="#8b5cf6" font-family="monospace" font-size="10" text-anchor="middle">LevelDB</text>
+
+                <!-- Storage Box -->
+                <rect x="470" y="55" width="160" height="70" rx="8" fill="#1e293b" stroke="#8b5cf6" stroke-width="2"/>
+                <text x="550" y="90" fill="#f8fafc" font-family="system-ui" font-size="13" font-weight="600" text-anchor="middle">State Store</text>
+                <text x="550" y="108" fill="#a78bfa" font-family="monospace" font-size="11" text-anchor="middle">Delta Snapshots</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 3: MCP Agent Connection -->
+        <div class="playground-panel" id="tab-mcp">
+          <div class="mcp-grid">
+            <div class="mcp-flow-card">
+              <h3 style="font-size: 17px; margin-bottom: 8px;">Direct AI Agent Connectivity (MCP)</h3>
+              <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 18px;">
+                DevDocs acts as a Model Context Protocol server. External coding agents (Claude Desktop, Cursor, Cline, Antigravity) can directly inspect, document, and edit workspace files autonomously.
+              </p>
+              <div class="terminal-box" style="margin-bottom: 16px;">
+                <span style="color: #64748b;">// Claude Desktop config (claude_desktop_config.json)</span><br/>
+                {<br/>
+                &nbsp;&nbsp;<span style="color: #38bdf8;">"mcpServers"</span>: {<br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #38bdf8;">"devdocs"</span>: {<br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #a78bfa;">"command"</span>: <span style="color: #4ade80;">"npx"</span>,<br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #a78bfa;">"args"</span>: [<span style="color: #4ade80;">"-y"</span>, <span style="color: #4ade80;">"@devdocs/mcp-server"</span>],<br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #a78bfa;">"env"</span>: { <span style="color: #38bdf8;">"DEVDOCS_TOKEN"</span>: <span style="color: #4ade80;">"dx_tok_9a87f..."</span> }<br/>
+                &nbsp;&nbsp;&nbsp;&nbsp;}<br/>
+                &nbsp;&nbsp;}<br/>
+                }
+              </div>
+              <span class="status-badge yjs-live">OAuth 2.1 &amp; Bearer Tokens Supported</span>
+            </div>
+
+            <div class="mcp-flow-card">
+              <h3 style="font-size: 17px; margin-bottom: 8px;">Live MCP Tool Invocation</h3>
+              <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 14px;">
+                Click any tool below to simulate an autonomous agent calling DevDocs via MCP:
+              </p>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px;">
+                <button class="btn btn-ghost btn-sm" onclick="simulateMcp('read')">devdocs_read_doc</button>
+                <button class="btn btn-ghost btn-sm" onclick="simulateMcp('append')">devdocs_append_section</button>
+                <button class="btn btn-ghost btn-sm" onclick="simulateMcp('search')">devdocs_search</button>
+              </div>
+              <div class="terminal-box" id="mcpTerminalOutput">
+                <span style="color: #10b981;">✓ Connected to DevDocs MCP Server (v1.2.0)</span><br/>
+                <span style="color: #38bdf8;">→ Agent invoked:</span> devdocs_read_doc("RFC-104")<br/>
+                <span style="color: #94a3b8;">← Document returned in 12ms (Title: Distributed CRDT Sync Engine)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 4: Interactive HTML Embed -->
+        <div class="playground-panel" id="tab-html">
+          <div class="html-embed-card">
+            <div class="embed-toolbar">
+              <div class="device-viewport-toggles">
+                <button class="device-btn active">Desktop (100%)</button>
+                <button class="device-btn">Tablet (768px)</button>
+                <button class="device-btn">Mobile (375px)</button>
+              </div>
+              <span style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">Embed: sprint-calculator.html</span>
+            </div>
+
+            <div style="padding: 20px;">
+              <div class="interactive-calc-box">
+                <h4 style="font-size: 16px; margin-bottom: 6px;">Sprint Velocity &amp; Release Forecaster</h4>
+                <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                  Working interactive micro-app embedded directly inside the document.
+                </p>
+
+                <div class="calc-input-group">
+                  <label class="calc-label" for="spInput">Total Epic Story Points:</label>
+                  <input type="number" id="spInput" class="calc-input" value="64" min="1" oninput="calculateSprintDemo()" />
+                </div>
+
+                <div class="calc-input-group">
+                  <label class="calc-label" for="velInput">Team Velocity (pts / 2-week sprint):</label>
+                  <input type="number" id="velInput" class="calc-input" value="16" min="1" oninput="calculateSprintDemo()" />
+                </div>
+
+                <div class="calc-result-box" id="calcResultDisplay">
+                  <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Forecast: <strong>4 sprints (8 weeks)</strong> to completion at 16 pts/sprint.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 5: GitHub Code References -->
+        <div class="playground-panel" id="tab-coderef">
+          <div class="code-diff-card" style="padding: 24px;">
+            <div class="card-label-row">
+              <span class="card-label-title" style="display: flex; align-items: center; gap: 8px;">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                <span>github.com/KiroAINativeCoder/DXEditor/server/src/collab.ts#L42-L55</span>
+              </span>
+              <span class="metric-badge" style="background: var(--primary-light); color: var(--primary); font-family: var(--font-mono);">Pinned: 750ca3e</span>
+            </div>
+
+            <pre style="font-family: var(--font-mono); font-size: 13px; line-height: 1.7; overflow-x: auto; color: #cbd5e1;">
+<span style="color: #64748b;">42 |</span>  <span style="color: #8b5cf6;">export function</span> <span style="color: #38bdf8;">setupCollabRelay</span>(server: http.Server) {
+<span style="color: #64748b;">43 |</span>    <span style="color: #8b5cf6;">const</span> wss = <span style="color: #8b5cf6;">new</span> WebSocketServer({ server, path: <span style="color: #10b981;">'/collab'</span> });
+<span style="color: #64748b;">44 |</span>    wss.on(<span style="color: #10b981;">'connection'</span>, (conn, req) =&gt; {
+<span style="color: #64748b;">45 |</span>      <span style="color: #8b5cf6;">const</span> docName = parseRoomId(req.url);
+<span style="color: #64748b;">46 |</span>      <span style="color: #64748b;">// Bind Y.Doc with CRDT transactional persistence</span>
+<span style="color: #64748b;">47 |</span>      setupWSConnection(conn, req, { docName, gc: <span style="color: #f59e0b;">true</span> });
+<span style="color: #64748b;">48 |</span>    });
+<span style="color: #64748b;">49 |</span>  }</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: CORE PILLARS (FEATURES GRID) -->
+    <section class="section wrap" id="features">
+      <div class="section-head">
+        <span class="section-tag">Engineering Foundation</span>
+        <h2 class="section-title">Everything technical teams require</h2>
+        <p class="section-desc">Designed from first principles for developers, DevOps, and technical architects.</p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-box">
+          <div class="feat-icon-badge blue">
+            <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          </div>
+          <h3>Multiplayer CRDT Collaboration</h3>
+          <p>
+            Real-time conflict-free editing backed by Yjs and Tiptap. Simultaneous edits converge deterministically with live colored presence carets and user cursors.
+          </p>
+          <div class="feature-tags">
+            <span class="feat-tag">Yjs Engine</span>
+            <span class="feat-tag">Sub-15ms Relay</span>
+            <span class="feat-tag">Zero Lost Edits</span>
+          </div>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-box">
+          <div class="feat-icon-badge violet">
+            <svg class="icon icon-lg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          </div>
+          <h3>AI Document Superpowers</h3>
+          <p>
+            Context-aware in-editor transformations: Crispise verbose prose, Bulletise vague requirements, Tabularize text lists, and generate Mermaid flowcharts on demand.
+          </p>
+          <div class="feature-tags">
+            <span class="feat-tag">Claude 3.5 Sonnet</span>
+            <span class="feat-tag">Gemini 3.8 Flash</span>
+            <span class="feat-tag">Local Ollama</span>
+          </div>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-box">
+          <div class="feat-icon-badge emerald">
+            <svg class="icon icon-lg" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line></svg>
+          </div>
+          <h3>Remote MCP Agent Server</h3>
+          <p>
+            Built-in Model Context Protocol server with per-user tokens and OAuth 2.1. Cursor, Claude Desktop, and autonomous agents read and edit docs automatically.
+          </p>
+          <div class="feature-tags">
+            <span class="feat-tag">MCP Standard</span>
+            <span class="feat-tag">OAuth 2.1</span>
+            <span class="feat-tag">Scoped Tokens</span>
+          </div>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-box">
+          <div class="feat-icon-badge amber">
+            <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </div>
+          <h3>RFC Workflow &amp; Governance</h3>
+          <p>
+            Technical review state machine (DRAFT → IN_REVIEW → ACCEPTED → REJECTED). Assign mandatory teammates, collect review feedback, and enforce sign-offs.
+          </p>
+          <div class="feature-tags">
+            <span class="feat-tag">Engineering RFCs</span>
+            <span class="feat-tag">Consensus Gating</span>
+            <span class="feat-tag">Inline Anchors</span>
+          </div>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-box">
+          <div class="feat-icon-badge cyan">
+            <svg class="icon icon-lg" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          </div>
+          <h3>Live Interactive HTML Sandboxes</h3>
+          <p>
+            Embed responsive mini-apps, KPI cards, and interactive forms directly in markdown documents. Test on Desktop, Tablet, and Mobile viewport modes with live split code view.
+          </p>
+          <div class="feature-tags">
+            <span class="feat-tag">Sandboxed Iframes</span>
+            <span class="feat-tag">Responsive Viewports</span>
+            <span class="feat-tag">Live Calculations</span>
+          </div>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-box">
+          <div class="feat-icon-badge slate">
+            <svg class="icon icon-lg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <h3>Postgres RLS &amp; True Self-Hosting</h3>
+          <p>
+            End-to-end security enforced at the database layer via Supabase Postgres Row-Level Security. S3 object storage for assets. Zero telemetry, zero external leaks.
+          </p>
+          <div class="feature-tags">
+            <span class="feat-tag">Postgres RLS</span>
+            <span class="feat-tag">Delta Snapshots</span>
+            <span class="feat-tag">Zero Telemetry</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: COMPARISON MATRIX (QUIP vs NOTION vs DEVDOCS) -->
+    <section class="section wrap" id="compare">
+      <div class="section-head">
+        <span class="section-tag">Comparison Matrix</span>
+        <h2 class="section-title">Why engineering teams choose DevDocs</h2>
+        <p class="section-desc">See how DevDocs compares against legacy tools like Quip and general note-taking apps.</p>
+      </div>
+
+      <div class="compare-card">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th style="width: 28%;">Feature</th>
+              <th style="width: 24%;" class="brand-col">DevDocs</th>
+              <th style="width: 24%;">Salesforce Quip</th>
+              <th style="width: 24%;">Notion</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>100% Self-Hostable</strong></td>
+              <td class="brand-col"><span class="check-yes">✓ Yes (Docker / EC2)</span></td>
+              <td><span class="check-no">✕ No (SaaS only)</span></td>
+              <td><span class="check-no">✕ No (Proprietary cloud)</span></td>
+            </tr>
+            <tr>
+              <td><strong>CRDT Real-Time Multiplayer</strong></td>
+              <td class="brand-col"><span class="check-yes">✓ Yjs Protocol</span></td>
+              <td><span class="check-yes">✓ Yes</span></td>
+              <td><span class="check-no">✕ OT / Block polling</span></td>
+            </tr>
+            <tr>
+              <td><strong>Model Context Protocol (MCP)</strong></td>
+              <td class="brand-col"><span class="check-yes">✓ Native MCP Server</span></td>
+              <td><span class="check-no">✕ No</span></td>
+              <td><span class="check-no">✕ No (Proprietary API)</span></td>
+            </tr>
+            <tr>
+              <td><strong>Technical RFC Review Workflow</strong></td>
+              <td class="brand-col"><span class="check-yes">✓ Built-in State Machine</span></td>
+              <td><span class="check-no">✕ Manual check-marks</span></td>
+              <td><span class="check-no">✕ Generic database</span></td>
+            </tr>
+            <tr>
+              <td><strong>Live Sandboxed HTML Embeds</strong></td>
+              <td class="brand-col"><span class="check-yes">✓ Interactive Micro-apps</span></td>
+              <td><span class="check-no">✕ No</span></td>
+              <td><span class="check-no">✕ Static embeds only</span></td>
+            </tr>
+            <tr>
+              <td><strong>Mermaid Flowcharts &amp; Diagrams</strong></td>
+              <td class="brand-col"><span class="check-yes">✓ Diagramify Studio + Zoom</span></td>
+              <td><span class="check-no">✕ No</span></td>
+              <td><span class="check-yes">✓ Basic code block</span></td>
+            </tr>
+            <tr>
+              <td><strong>GitHub Code Refs Pinned to SHA</strong></td>
+              <td class="brand-col"><span class="check-yes">✓ Deep GitHub links</span></td>
+              <td><span class="check-no">✕ No</span></td>
+              <td><span class="check-no">✕ Plain text block</span></td>
+            </tr>
+            <tr>
+              <td><strong>Data Ownership &amp; Privacy</strong></td>
+              <td class="brand-col"><span class="check-yes">✓ Zero telemetry, 100% yours</span></td>
+              <td><span class="check-no">✕ Locked in Salesforce</span></td>
+              <td><span class="check-no">✕ Hosted proprietary</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 5: SELF-HOSTING & DEPLOYMENT -->
+    <section class="section wrap" id="self-host">
+      <div class="section-head">
+        <span class="section-tag">Deploy in Minutes</span>
+        <h2 class="section-title">Run anywhere: Docker, Node, or Cloud</h2>
+        <p class="section-desc">Zero external dependencies required for local evaluation. Starts in seconds.</p>
+      </div>
+
+      <div class="deploy-panel">
+        <div class="deploy-nav">
+          <button class="deploy-tab active" onclick="switchDeployTab('docker', this)">1. Docker Compose</button>
+          <button class="deploy-tab" onclick="switchDeployTab('node', this)">2. Local Node.js (Dev)</button>
+          <button class="deploy-tab" onclick="switchDeployTab('aws', this)">3. AWS EC2 Script</button>
+        </div>
+
+        <div class="deploy-body">
+          <!-- Docker Tab -->
+          <div id="deploy-docker" class="terminal-box">
+            <button class="terminal-copy-btn" onclick="copySnippet('dockerCmd')">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>Copy</span>
+            </button>
+            <pre id="dockerCmd" style="margin: 0; font-family: inherit;">
+<span style="color: #64748b;"># Run DevDocs full stack (API + Collab Relay + Client)</span>
+git clone https://github.com/KiroAINativeCoder/DXEditor.git
+cd DXEditor
+docker compose up -d
+
+<span style="color: #10b981;">✓ Ready on http://localhost:5173</span></pre>
+          </div>
+
+          <!-- Node Tab -->
+          <div id="deploy-node" class="terminal-box" style="display: none;">
+            <button class="terminal-copy-btn" onclick="copySnippet('nodeCmd')">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>Copy</span>
+            </button>
+            <pre id="nodeCmd" style="margin: 0; font-family: inherit;">
+<span style="color: #64748b;"># 1. Install all dependencies</span>
+npm run install:all
+
+<span style="color: #64748b;"># 2. Run local Prisma migration (uses zero-config SQLite)</span>
+npm --prefix server exec prisma migrate deploy
+
+<span style="color: #64748b;"># 3. Start API (:4000), Collab Relay (:4001), and Client (:5173) together</span>
+npm run dev</pre>
+          </div>
+
+          <!-- AWS Tab -->
+          <div id="deploy-aws" class="terminal-box" style="display: none;">
+            <button class="terminal-copy-btn" onclick="copySnippet('awsCmd')">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              <span>Copy</span>
+            </button>
+            <pre id="awsCmd" style="margin: 0; font-family: inherit;">
+<span style="color: #64748b;"># Run automated provisioning on a t3.nano instance (~$3.80/mo)</span>
+./deploy/provision-and-deploy.sh
+
+<span style="color: #64748b;"># Automated Nginx reverse-proxy + PM2 clustering + Let's Encrypt SSL</span></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: BOTTOM CALL TO ACTION -->
+    <section class="wrap" style="padding-top: 40px;">
+      <div class="cta-banner">
+        <h2>Own your documentation. Zero lock-in.</h2>
+        <p>Join engineering teams writing specs, RFCs, and architecture docs with real-time multiplayer and autonomous AI agents.</p>
+        <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+          <a class="btn btn-primary btn-lg" href="//app.devdocs.trailmark.online/">
+            <span>Launch DevDocs</span>
+            <svg class="icon" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          </a>
+          <a class="btn btn-ghost btn-lg" href="https://github.com/KiroAINativeCoder/DXEditor" target="_blank" rel="noopener">
+            <span>View Source on GitHub</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modern Technical Footer -->
+  <footer>
+    <div class="wrap">
+      <div class="footer-top">
+        <div class="footer-col">
+          <div class="brand" style="margin-bottom: 14px;">
+            <span class="brand-mark">DD</span>
+            <span>DevDocs</span>
+          </div>
+          <p style="font-size: 14px; line-height: 1.6; max-width: 340px;">
+            Open-source, self-hostable collaborative documentation platform for engineering organizations. Built with Yjs, Tiptap, Supabase, and Model Context Protocol.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#playground">Interactive Studio</a></li>
+            <li><a href="#features">CRDT Multiplayer</a></li>
+            <li><a href="#mcp">MCP Agent Protocol</a></li>
+            <li><a href="#compare">Quip Alternative</a></li>
+            <li><a href="//app.devdocs.trailmark.online/">Web Application</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Technology</h4>
+          <ul>
+            <li><a href="https://yjs.dev" target="_blank" rel="noopener">Yjs CRDT</a></li>
+            <li><a href="https://tiptap.dev" target="_blank" rel="noopener">Tiptap ProseMirror</a></li>
+            <li><a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">Model Context Protocol</a></li>
+            <li><a href="https://supabase.com" target="_blank" rel="noopener">Supabase Postgres</a></li>
+            <li><a href="https://mermaid.js.org" target="_blank" rel="noopener">Mermaid.js</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Open Source</h4>
+          <ul>
+            <li><a href="https://github.com/KiroAINativeCoder/DXEditor" target="_blank" rel="noopener">GitHub Repository</a></li>
+            <li><a href="https://github.com/KiroAINativeCoder/DXEditor/issues" target="_blank" rel="noopener">Issue Tracker</a></li>
+            <li><a href="https://github.com/KiroAINativeCoder/DXEditor/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></li>
+            <li><a href="https://devdocs.trailmark.online" target="_blank" rel="noopener">Hosted Docs</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          © 2026 DevDocs. Open source under the MIT License. Built as a sovereign replacement for Quip.
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="pulse-dot"></span>
+          <span style="color: var(--text-muted); font-size: 12px; font-family: var(--font-mono);">All systems operational</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Interactive JavaScript logic -->
+  <script>
+    // 1. Dark/Light Theme Switcher
+    const themeToggleBtn = document.getElementById('themeToggle');
+    const sunIcon = document.getElementById('sunIcon');
+    const moonIcon = document.getElementById('moonIcon');
+
+    function applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      localStorage.setItem('dx_landing_theme', theme);
+      if (theme === 'light') {
+        sunIcon.style.display = 'block';
+        moonIcon.style.display = 'none';
+      } else {
+        sunIcon.style.display = 'none';
+        moonIcon.style.display = 'block';
+      }
+    }
+
+    const savedTheme = localStorage.getItem('dx_landing_theme') || 
+      (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    applyTheme(savedTheme);
+
+    themeToggleBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    });
+
+    // 2. Interactive Playground Tabs
+    const tabButtons = document.querySelectorAll('#playgroundTabs .p-tab-btn');
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.playground-panel').forEach(p => p.classList.remove('active'));
+        
+        btn.classList.add('active');
+        const targetId = btn.getAttribute('data-tab');
+        const panel = document.getElementById(targetId);
+        if (panel) panel.classList.add('active');
+      });
+    });
+
+    // 3. AI Demo Transformations
+    const aiDemos = {
+      bulletise: {
+        original: `"The authentication system should probably be pretty fast so people don't wait around. Also it needs to handle lots of concurrent user logins when our Europe traffic peaks without running out of database connections or memory."`,
+        transformed: `<div style="color: #10b981; font-weight: 600; margin-bottom: 6px;">✓ SLA 1: Auth latency p99 &lt; 45ms under 15,000 req/sec</div>
+<div style="color: #10b981; font-weight: 600; margin-bottom: 6px;">✓ SLA 2: PgBouncer pool ceiling fixed at 120 client connections</div>
+<div style="color: #10b981; font-weight: 600;">✓ SLA 3: Memory footprint capped at 256MB with leak circuit-breaker</div>`,
+        metric: "+98% Technical Clarity"
+      },
+      crispise: {
+        original: `"In order to ensure that we maintain the utmost level of consistency across all nodes participating in document synchronization, we have decided that it would be best practice to leverage the well-tested CRDT algorithms pioneered in Yjs instead of attempting to invent our own custom operational transform engine from scratch."`,
+        transformed: `<div style="color: var(--primary); font-weight: 600; line-height: 1.5;">
+"Adopt Yjs CRDT for cross-node document sync. Eliminates custom OT complexity while guaranteeing mathematical convergence."
+</div>`,
+        metric: "-62% Words Compacted"
+      },
+      tabularize: {
+        original: `"Redis cache has 2ms latency and 99.99% availability. Postgres primary has 18ms latency and 99.95% availability. Collab WebSocket relay has 12ms latency and 99.99% uptime."`,
+        transformed: `<div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; border-bottom: 1px solid var(--border); padding-bottom: 6px; font-weight: 700; color: var(--text-dim); font-size: 12px;">
+  <span>Infrastructure Component</span>
+  <span>Latency (p99)</span>
+  <span style="text-align: right;">Availability</span>
+</div>
+<div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px;">
+  <span>Redis Session Cache</span>
+  <span style="color: #10b981;">2ms</span>
+  <span style="text-align: right; color: #10b981;">99.99%</span>
+</div>
+<div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px;">
+  <span>Postgres Primary (RLS)</span>
+  <span style="color: #10b981;">18ms</span>
+  <span style="text-align: right; color: #10b981;">99.95%</span>
+</div>
+<div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; padding: 6px 0; font-size: 13px;">
+  <span>Yjs WebSocket Relay</span>
+  <span style="color: #10b981;">12ms</span>
+  <span style="text-align: right; color: #10b981;">99.99%</span>
+</div>`,
+        metric: "Markdown Matrix Generated"
+      },
+      mermaid: {
+        original: `"When user logs in, request hits Nginx reverse proxy. Nginx terminates SSL and forwards auth to Express REST API on port 4000. Express issues signed JWT and connects client to Collab relay."`,
+        transformed: `<div style="display: flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; padding: 20px 0;">
+  <span style="padding: 4px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px;">Client</span>
+  <span style="color: var(--primary); font-weight: 700;">➔</span>
+  <span style="padding: 4px 10px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px;">Nginx (:443)</span>
+  <span style="color: var(--primary); font-weight: 700;">➔</span>
+  <span style="padding: 4px 10px; background: var(--primary-light); color: var(--primary); border: 1px solid var(--border-accent); border-radius: 4px; font-weight: 600;">Express (:4000)</span>
+  <span style="color: var(--primary); font-weight: 700;">➔</span>
+  <span style="padding: 4px 10px; background: var(--accent-violet-light); color: var(--accent-violet); border: 1px solid rgba(139, 92, 246, 0.4); border-radius: 4px; font-weight: 600;">Collab (:4001)</span>
+</div>`,
+        metric: "Vector Syntax Rendered"
+      }
+    };
+
+    function applyAiDemo(type) {
+      document.querySelectorAll('.ai-trigger-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = Array.from(document.querySelectorAll('.ai-trigger-btn')).find(b => b.textContent.toLowerCase().includes(type));
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const data = aiDemos[type];
+      if (data) {
+        document.getElementById('aiOriginalContent').innerHTML = data.original;
+        document.getElementById('aiTransformedContent').innerHTML = data.transformed;
+        document.getElementById('aiMetricBadge').textContent = data.metric;
+      }
+    }
+
+    // 4. Diagram Type Switcher
+    function setDiagramType(type) {
+      const container = document.getElementById('diagramDisplay');
+      if (type === 'sequence') {
+        container.innerHTML = `<svg width="680" height="180" viewBox="0 0 680 180" style="max-width: 100%; height: auto;">
+          <line x1="120" y1="30" x2="120" y2="160" stroke="var(--border-strong)" stroke-dasharray="4"/>
+          <line x1="340" y1="30" x2="340" y2="160" stroke="var(--border-strong)" stroke-dasharray="4"/>
+          <line x1="560" y1="30" x2="560" y2="160" stroke="var(--border-strong)" stroke-dasharray="4"/>
+          <rect x="60" y="10" width="120" height="30" rx="6" fill="#3b82f6" />
+          <text x="120" y="30" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">Browser User</text>
+          <rect x="280" y="10" width="120" height="30" rx="6" fill="#8b5cf6" />
+          <text x="340" y="30" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">REST Auth API</text>
+          <rect x="500" y="10" width="120" height="30" rx="6" fill="#10b981" />
+          <text x="560" y="30" fill="#fff" font-size="12" font-weight="600" text-anchor="middle">Postgres RLS</text>
+          <!-- Call 1 -->
+          <line x1="120" y1="70" x2="330" y2="70" stroke="#3b82f6" stroke-width="2"/>
+          <text x="225" y="65" fill="var(--text-muted)" font-size="10" text-anchor="middle">1. POST /api/auth/login</text>
+          <!-- Call 2 -->
+          <line x1="340" y1="100" x2="550" y2="100" stroke="#8b5cf6" stroke-width="2"/>
+          <text x="445" y="95" fill="var(--text-muted)" font-size="10" text-anchor="middle">2. Verify bcrypt + RLS session</text>
+          <!-- Response -->
+          <line x1="340" y1="130" x2="130" y2="130" stroke="#10b981" stroke-width="2" stroke-dasharray="3"/>
+          <text x="235" y="125" fill="#10b981" font-size="10" text-anchor="middle">3. Return JWT + Doc Grants</text>
+        </svg>`;
+      } else if (type === 'crdt') {
+        container.innerHTML = `<svg width="680" height="180" viewBox="0 0 680 180" style="max-width: 100%; height: auto;">
+          <rect x="50" y="40" width="160" height="80" rx="8" fill="var(--bg-elevated)" stroke="#3b82f6" stroke-width="2"/>
+          <text x="130" y="75" fill="var(--text)" font-size="13" font-weight="700" text-anchor="middle">Peer A (New York)</text>
+          <text x="130" y="95" fill="#3b82f6" font-family="monospace" font-size="11" text-anchor="middle">Insert Char 'X' at pos 4</text>
+          
+          <rect x="470" y="40" width="160" height="80" rx="8" fill="var(--bg-elevated)" stroke="#10b981" stroke-width="2"/>
+          <text x="550" y="75" fill="var(--text)" font-size="13" font-weight="700" text-anchor="middle">Peer B (London)</text>
+          <text x="550" y="95" fill="#10b981" font-family="monospace" font-size="11" text-anchor="middle">Insert Char 'Y' at pos 4</text>
+
+          <path d="M 210 80 Q 340 20 470 80" stroke="var(--primary)" stroke-width="2" fill="none"/>
+          <path d="M 470 80 Q 340 140 210 80" stroke="#10b981" stroke-width="2" fill="none"/>
+          <rect x="270" y="65" width="140" height="30" rx="15" fill="#0f172a" stroke="var(--border-strong)"/>
+          <text x="340" y="84" fill="#f8fafc" font-size="11" font-weight="700" text-anchor="middle">Deterministic Merge</text>
+        </svg>`;
+      } else {
+        container.innerHTML = `<svg width="680" height="180" viewBox="0 0 680 180" style="max-width: 100%; height: auto;">
+          <rect x="20" y="55" width="130" height="70" rx="8" fill="var(--bg-elevated)" stroke="#3b82f6" stroke-width="2"/>
+          <text x="85" y="90" fill="var(--text)" font-family="system-ui" font-size="13" font-weight="600" text-anchor="middle">Browser (Tiptap)</text>
+          <text x="85" y="108" fill="var(--text-muted)" font-family="monospace" font-size="11" text-anchor="middle">Y.Doc Replica</text>
+
+          <path d="M 150 90 L 230 90" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4" />
+          <text x="190" y="80" fill="#3b82f6" font-family="monospace" font-size="10" text-anchor="middle">WebSocket</text>
+
+          <rect x="230" y="45" width="160" height="90" rx="10" fill="#2563eb" stroke="#60a5fa" stroke-width="2"/>
+          <text x="310" y="85" fill="#ffffff" font-family="system-ui" font-size="14" font-weight="700" text-anchor="middle">Collab Relay (:4001)</text>
+          <text x="310" y="105" fill="#e0e7ff" font-family="monospace" font-size="11" text-anchor="middle">Yjs Sync Protocol</text>
+
+          <path d="M 390 90 L 470 90" stroke="#8b5cf6" stroke-width="2" />
+          <text x="430" y="80" fill="#8b5cf6" font-family="monospace" font-size="10" text-anchor="middle">LevelDB</text>
+
+          <rect x="470" y="55" width="160" height="70" rx="8" fill="var(--bg-elevated)" stroke="#8b5cf6" stroke-width="2"/>
+          <text x="550" y="90" fill="var(--text)" font-family="system-ui" font-size="13" font-weight="600" text-anchor="middle">State Store</text>
+          <text x="550" y="108" fill="#a78bfa" font-family="monospace" font-size="11" text-anchor="middle">Delta Snapshots</text>
+        </svg>`;
+      }
+    }
+
+    // 5. MCP Simulation
+    function simulateMcp(action) {
+      const out = document.getElementById('mcpTerminalOutput');
+      if (action === 'append') {
+        out.innerHTML = `<span style="color: #10b981;">✓ Connected to DevDocs MCP Server</span><br/>
+<span style="color: #38bdf8;">→ Agent invoked:</span> devdocs_append_section("RFC-104", "Security Analysis")<br/>
+<span style="color: #eab308;">⚡ Operation:</span> Appending markdown section via CRDT delta update<br/>
+<span style="color: #10b981;">← Success:</span> Document RFC-104 updated. Revision vector incremented (rev 42).`;
+      } else if (action === 'search') {
+        out.innerHTML = `<span style="color: #10b981;">✓ Connected to DevDocs MCP Server</span><br/>
+<span style="color: #38bdf8;">→ Agent invoked:</span> devdocs_search("Postgres RLS pool")<br/>
+<span style="color: #94a3b8;">← Matched 3 documents:</span><br/>
+&nbsp;&nbsp;1. RFC-104: Distributed CRDT Sync Engine (score: 0.94)<br/>
+&nbsp;&nbsp;2. Database Migration Runbook (score: 0.88)<br/>
+&nbsp;&nbsp;3. Production Deployment Topologies (score: 0.79)`;
+      } else {
+        out.innerHTML = `<span style="color: #10b981;">✓ Connected to DevDocs MCP Server (v1.2.0)</span><br/>
+<span style="color: #38bdf8;">→ Agent invoked:</span> devdocs_read_doc("RFC-104")<br/>
+<span style="color: #94a3b8;">← Document returned in 12ms (Title: Distributed CRDT Sync Engine)</span>`;
+      }
+    }
+
+    // 6. Interactive Calculator
+    function calculateSprintDemo() {
+      const sp = Number(document.getElementById('spInput').value) || 0;
+      const vel = Number(document.getElementById('velInput').value) || 1;
+      const sprints = Math.ceil(sp / vel);
+      const weeks = sprints * 2;
+      document.getElementById('calcResultDisplay').innerHTML = `
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <span>Forecast: <strong>${sprints} sprints (${weeks} weeks)</strong> to completion at ${vel} pts/sprint.</span>
+      `;
+    }
+
+    // 7. Deploy tabs
+    function switchDeployTab(tab, el) {
+      document.querySelectorAll('.deploy-tab').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('deploy-docker').style.display = tab === 'docker' ? 'block' : 'none';
+      document.getElementById('deploy-node').style.display = tab === 'node' ? 'block' : 'none';
+      document.getElementById('deploy-aws').style.display = tab === 'aws' ? 'block' : 'none';
+    }
+
+    // 8. Clipboard helpers
+    function copySnippet(id) {
+      const text = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Copied to clipboard!');
+      });
+    }
+
+    const copyCmdBtn = document.getElementById('copyCmdBtn');
+    copyCmdBtn.addEventListener('click', () => {
+      const cmd = document.getElementById('quickCmdText').innerText;
+      navigator.clipboard.writeText(cmd).then(() => {
+        copyCmdBtn.innerHTML = `<svg class="icon icon-sm" viewBox="0 0 24 24" style="color:#10b981;"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        setTimeout(() => {
+          copyCmdBtn.innerHTML = `<svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+        }, 2000);
+      });
+    });
+  </script>
+</body>
+</html>
